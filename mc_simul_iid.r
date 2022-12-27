@@ -1,6 +1,7 @@
 #Ex 1
 mc=function(N){
   matriz_acertos=matrix(NA,ncol = 3,nrow = N)
+  matriz_resul_pred=matrix(NA,ncol = 3,nrow = N)
   for(n in 1:N){
 #################################################
 #####################CASO IID####################
@@ -172,10 +173,101 @@ acerto_classificacao=sum(y_fitted==y_state[1:length(y)])/length(y)
 
 matriz_acertos[n,3]=acerto_classificacao
 
-}
+##########################################################################
+#############################previsao radial##############################
+##########################################################################
+#Separando dados para teste
+dataset_svm_train=as.data.frame(y[1:120])
+dataset_svm_test=data.frame(y[121:150]) #selecionar dados do grupo 1 para a base de teste (30observações)
 
-return(matriz_acertos)
-}
+#################################################
+####################SVM##########################
+#################################################
+#dataset_svm_train=dataset_svm_train[order(dataset_svm_train$V1),]
+classifier = svm(y =  y_state[1:120] , x = dataset_svm_train, type = 'C-classification', kernel = 'radial',gamma=.1) #roda svm tentando prver var 31 (variavel binaria de grupo) a partir dos dados
+#da série de tempo
+summary(classifier) #aqui a gente vê quantos dados realmente o modelo svm usou para classificar os dados (63 dos 800 para classe 0 e 65 dos 200 para classe 1)
+par(mfrow=c(3,1))
+y_fitted=as.vector(classifier$fitted)
+pred=predict(classifier,newdata = dataset_svm_test)
+pred_radil=as.vector(pred)
+#plot(as.numeric(y_state[121:150]),main="Valores dos agrupamentos simulados",col = ifelse(y_state[121:150] == 1,'red','blue'))
+#plot(as.numeric(pred),main="Valores dos agrupamentos previstos",col = ifelse(pred == 1,'red','blue'))
+resul_pred=sum(pred_radil==y_state[121:150])/30
+matriz_resul_pred[n,3]=resul_pred
+
+
+
+##########################################################################
+#############################previsao linear##############################
+##########################################################################
+#Separando dados para teste
+dataset_svm_train=as.data.frame(y[1:120])
+dataset_svm_test=data.frame(y[121:150]) #selecionar dados do grupo 1 para a base de teste (30observações)
+
+#################################################
+####################SVM##########################
+#################################################
+#dataset_svm_train=dataset_svm_train[order(dataset_svm_train$V1),]
+classifier = svm(y =  y_state[1:120] , x = dataset_svm_train, type = 'C-classification', kernel = 'linear') #roda svm tentando prver var 31 (variavel binaria de grupo) a partir dos dados
+#da série de tempo
+summary(classifier) #aqui a gente vê quantos dados realmente o modelo svm usou para classificar os dados (63 dos 800 para classe 0 e 65 dos 200 para classe 1)
+par(mfrow=c(3,1))
+y_fitted=as.vector(classifier$fitted)
+pred=predict(classifier,newdata = dataset_svm_test)
+pred_radil=as.vector(pred)
+#plot(as.numeric(y_state[121:150]),main="Valores dos agrupamentos simulados",col = ifelse(y_state[121:150] == 1,'red','blue'))
+#plot(as.numeric(pred),main="Valores dos agrupamentos previstos",col = ifelse(pred == 1,'red','blue'))
+resul_pred=sum(pred_radil==y_state[121:150])/30
+matriz_resul_pred[n,2]=resul_pred
+
+
+##########################################################################
+#############################previsao markov##############################
+##########################################################################
+#Separando dados para teste
+dataset_svm_train=as.data.frame(y[1:120])
+dataset_svm_test=data.frame(y[121:150]) #selecionar dados do grupo 1 para a base de teste (30observações)
+
+#################################################
+####################SVM##########################
+#################################################
+#dataset_svm_train=dataset_svm_train[order(dataset_svm_train$V1),]
+classifier = svm(y =  y_state[1:120] , x = dataset_svm_train, type = 'C-classification', kernel = 'linear') #roda svm tentando prver var 31 (variavel binaria de grupo) a partir dos dados
+#da série de tempo
+summary(classifier) #aqui a gente vê quantos dados realmente o modelo svm usou para classificar os dados (63 dos 800 para classe 0 e 65 dos 200 para classe 1)
+par(mfrow=c(3,1))
+y_fitted=as.vector(classifier$fitted)
+pred=predict(classifier,newdata = dataset_svm_test)
+pred_radil=as.vector(pred)
+#plot(as.numeric(y_state[121:150]),main="Valores dos agrupamentos simulados",col = ifelse(y_state[121:150] == 1,'red','blue'))
+#plot(as.numeric(pred),main="Valores dos agrupamentos previstos",col = ifelse(pred == 1,'red','blue'))
+sum(pred_radil==y_state[121:150])/30
+
+
+p1_hat=dnorm(y[121:150],mean = -0.8611969,sd = sqrt(1.927713))
+p2_hat=dnorm(y[121:150],mean = 1.255519,sd = sqrt(4.896448*exp(-01)))
+epsolon_tt_hat=matrix(NA,ncol = n_states+1,nrow = 30)
+epsolon_tt_hat[,1]=p1_hat
+epsolon_tt_hat[,2]=p2_hat
+epsolon_tt_hat[,3]=2
+y_state_hat=vector(length = TT)
+epsolon_tt_hat[epsolon_tt_hat[,1]>=epsolon_tt_hat[,2],3]=1
+par(mfrow=c(3,1))
+#plot(y,col = ifelse(y_state == 1,'red','blue'),main = "Plot variável resposta y")
+#lines(y)
+#plot(y_state[121:150],col = ifelse(y_state[121:150] == 1,'red','blue'),main = "Plot dos estados da variável resposta y")
+#plot(epsolon_tt_hat[,3],col = ifelse(epsolon_tt_hat[,3] == 1,'red','blue'),main = "Plot dos estados estimados da variável resposta y")
+acerto_classificacao_markov=sum(epsolon_tt_hat[,3]==y_state[121:150])/30
+matriz_resul_pred[n,1]=acerto_classificacao_markov
+ 
+  }
+  matriz_final=cbind(matriz_acertos,matriz_resul_pred)
+return(matriz_final)
+  }
+
+
+
 
 #MCMC
 resultados=mc(500)
@@ -188,3 +280,17 @@ sd(resultados[,2])
 #resultado svm radial
 summary(resultados[,3])
 sd(resultados[,3])
+
+
+
+
+#MCMC pred
+#resultado markov
+summary(resultados[,4])
+sd(resultados[,4])
+#resultado svm linear
+summary(resultados[,5])
+sd(resultados[,5])
+#resultado svm radial
+summary(resultados[,6])
+sd(resultados[,6])
