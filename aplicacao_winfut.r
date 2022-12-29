@@ -144,6 +144,7 @@ epsolon_tt_hat2=vector()
 L=matrix(NA,nrow = n_max_test,ncol = n_states)
 L[1,]=c(0,0)
 
+pacf(Data$historico_fechamento,na.action = na.pass,lag.max = 20)
 
 #########smoothed inference
 for (k in 2:n_max_test){
